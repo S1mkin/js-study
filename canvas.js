@@ -17,33 +17,41 @@ class Canvas {
         this.canvas.height = height;
         this.canvas.width = width;
         this.canvas.idParentElement = idParentElement;
-        this.step = 50;
+        this.step = 40;
         this.CREATE_CANVAS();      
     }
 
+    RANDOM_COLOR() {
+        let colors = ["#F00", "#955", "#044", "#F08", "#208", "#8F8", "#0F0", "#0A0", "#040", "#00F", "#456"];
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min)) + min;
+        }
+        return colors[getRandomInt(0, colors.length)];  
+    }
+
     CREATE_CANVAS() {
-        this.canvas.ctx.fillStyle = "#000";
+        this.canvas.ctx.fillStyle = "#FFF";
         this.canvas.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         document.getElementById(this.canvas.idParentElement).appendChild(this.canvas);
     }
 
     PAINT_CUBES(x,y, color) {
         let start_x = x * this.step - this.step,
-            start_y = y * this.step - this.step,
-            end_x = start_x,
-            end_y = start_y;
+            start_y = y * this.step - this.step;
 
         this.canvas.ctx.fillStyle = color;
-        this.canvas.ctx.fillRect(start_x, start_y, end_x, end_y);
+        this.canvas.ctx.fillRect(start_x, start_y, this.step - 1, this.step - 1);
     }
 
 }
 
 
-
-
 const jsCubes = new Canvas("jsCubes", "jsCubes-wrap", 400, 400);
 
-jsCubes.PAINT_CUBES(4, 2, "#F00");
+for (let x = 1; x <= 10; x++) {
+    for (let y = 1; y <= 10; y++) {
+        jsCubes.PAINT_CUBES(x, y, jsCubes.RANDOM_COLOR());
+    }
+}
 
 //jsCubes-wrap
