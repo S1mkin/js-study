@@ -8,7 +8,7 @@ class Canvas {
         this.canvas.width = width;
         this.canvas.idParentElement = idParentElement;
         this.step = step;
-        this.colors = ["#fff", "#db1414", "#23518c", "#276f21", "#c1af1b"];
+        this.colors = ["#fff", "#db1414", "#23518c", "#276f21", "#c1af1b", "#eee"];
 
         this.CREATE_CANVAS();
     }
@@ -53,6 +53,8 @@ class jsCubes {
         this.yCount = yCount;
         this.fields = [];
 
+        this.score = 0;
+
         this.CREATE_FIELDS();
     }
 
@@ -95,6 +97,60 @@ class jsCubes {
         return value;
     }
 
+
+
+    TRY_DELETE_FIELD(x, y) {
+
+        let currentValue = this.GET_FIELD_VALUE(x, y);
+        let newValue = 6;
+        let deleteCounter = 1;
+
+        let oneCubeDel = (x, y, currentValue, newValue) => {
+
+            if (x > 1 && this.GET_FIELD_VALUE(x-1, y) == currentValue ) {
+                deleteCounter++;
+                this.SET_FIELD_VALUE(x-1, y, newValue);
+                oneCubeDel(x-1, y, currentValue, newValue);
+            }
+
+            if (x < this.xCount && this.GET_FIELD_VALUE(x+1, y) == currentValue ) {
+                deleteCounter++;
+                this.SET_FIELD_VALUE(x+1, y, newValue);
+                oneCubeDel(x+1, y, currentValue, newValue);
+            }
+
+            if (y > 1 && this.GET_FIELD_VALUE(x, y-1) == currentValue ) {
+                deleteCounter++;
+                this.SET_FIELD_VALUE(x, y-1, newValue);
+                oneCubeDel(x, y-1, currentValue, newValue);
+            }
+
+            if (y < this.yCount && this.GET_FIELD_VALUE(x, y+1) == currentValue ) {
+                deleteCounter++;
+                this.SET_FIELD_VALUE(x, y+1, newValue);
+                oneCubeDel(x, y+1, currentValue, newValue);
+            }
+
+        }
+
+        this.SET_FIELD_VALUE(x, y, newValue);
+
+        oneCubeDel(x, y, currentValue, newValue);
+
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                for(let i = 0; i < this.fields.length; i++) {
+                    if ( this.fields[i].value == 6 ) {
+                        this.fields[i].value = (deleteCounter > 2) ? 0 : currentValue;
+                    }
+                }
+                this.REBUILD_FIELDS();
+                resolve(true);
+            }, 100);
+        });   
+
+    } 
+
     REBUILD_FIELDS() {
         for (let x = 1; x <= this.xCount; x++ ) {
             for (let y = 2; y <= this.yCount; y++ ) {
@@ -116,8 +172,14 @@ jsCubesCanvas.REPAINT_FIELDS(jsCubesFields.fields);
 
 jsCubesCanvas.canvas.onclick = function(event){
     let pos = jsCubesCanvas.COORD_TO_POSITION(event.offsetX, event.offsetY);
-    jsCubesFields.SET_FIELD_VALUE(pos.x, pos.y, 0);
-    jsCubesCanvas.REPAINT_FIELDS(jsCubesFields.fields);
+    // jsCubesFields.SET_FIELD_VALUE(pos.x, pos.y, 0);
+    
+    jsCubesFields.TRY_DELETE_FIELD(pos.x, pos.y).then(() => {
+        jsCubesCanvas.REPAINT_FIELDS(jsCubesFields.fields);
+    });
+
+    
+
 };
 
 //console.log(jsCubesFields.fields[0]);
