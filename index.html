@@ -9,9 +9,10 @@
     </head>
     <body>
         <main>
-            <p>Page</p>
+            <h1 id="jsCubes-score">0</h1>
 
             <div id="jsCubes-wrap"></div>
+            <div id="jsCubesLine-wrap"></div>
 
         </main>
 
@@ -26,6 +27,7 @@
     body {
         background-color: #EEE;
         margin: 0;
+        text-align: center;
     }
     main {
         max-width: 960px;
@@ -35,5 +37,10 @@
         color: #555;
         font-family: Verdana, Geneva, Tahoma, sans-serif;
         font-size: 1rem;
+    }
+
+    canvas {
+        border: 3px solid transparent;
+        outline: 3px solid #eee;
     }
 </style>

@@ -8,7 +8,7 @@ class Canvas {
         this.canvas.width = width;
         this.canvas.idParentElement = idParentElement;
         this.step = step;
-        this.colors = ["#fff", "#db1414", "#23518c", "#276f21", "#c1af1b", "#eee"];
+        this.colors = ["#fff", "#db1414", "#23518c", "#276f21", "#c1af1b", "#aaa"];
 
         this.CREATE_CANVAS();
     }
@@ -25,9 +25,12 @@ class Canvas {
 
         this.canvas.ctx.fillStyle = color;
         this.canvas.ctx.fillRect(start_x, start_y, this.step - 1, this.step - 1);
-
-        this.canvas.ctx.fillStyle = "#fff";
-        this.canvas.ctx.fillText(`${x}:${y}`, start_x + 10, start_y + 14);
+        
+        this.canvas.ctx.strokeStyle = (color == "#fff") ? "#fff": "#fff";
+        this.canvas.ctx.strokeRect(start_x+4, start_y+4, this.step - 8, this.step - 8);
+ 
+        //this.canvas.ctx.fillStyle = "#fff";
+        //this.canvas.ctx.fillText(`${x}:${y}`, start_x + 10, start_y + 14);
 
     }
 
@@ -102,7 +105,7 @@ class jsCubes {
     TRY_DELETE_FIELD(x, y) {
 
         let currentValue = this.GET_FIELD_VALUE(x, y);
-        let newValue = 6;
+        let newValue = 5;
         let deleteCounter = 1;
 
         let oneCubeDel = (x, y, currentValue, newValue) => {
@@ -131,16 +134,21 @@ class jsCubes {
                 oneCubeDel(x, y+1, currentValue, newValue);
             }
 
+
         }
 
         this.SET_FIELD_VALUE(x, y, newValue);
 
         oneCubeDel(x, y, currentValue, newValue);
 
+        jsCubesCanvas.REPAINT_FIELDS(this.fields);
+
+        this.score += (deleteCounter > 2) ? deleteCounter**2 : 0;
+
         return new Promise((resolve, reject) => {
             setTimeout(() => {
                 for(let i = 0; i < this.fields.length; i++) {
-                    if ( this.fields[i].value == 6 ) {
+                    if ( this.fields[i].value == newValue ) {
                         this.fields[i].value = (deleteCounter > 2) ? 0 : currentValue;
                     }
                 }
@@ -151,7 +159,34 @@ class jsCubes {
 
     } 
 
+    SEARCH_EMPTY_COL(){
+        let maybe_empty_col = 0; 
+        for (let x = 2; x <= this.xCount; x++ ) {
+            maybe_empty_col = x;
+            for (let y = 1; y <= this.yCount; y++ ) {
+                if (this.GET_FIELD_VALUE(x, y) != 0) {
+                    maybe_empty_col = 0;
+                    break;
+                }
+            }
+            if (maybe_empty_col) { 
+                break;
+            }
+        }
+        return maybe_empty_col;     
+    }
+
+    SWAP_COL(x1, x2) {
+            for (let y = 1; y <= this.yCount; y++ ) {
+                let x1_val = this.GET_FIELD_VALUE(x1, y);
+                let x2_val = this.GET_FIELD_VALUE(x2, y);
+                this.SET_FIELD_VALUE(x1, y, x2_val);
+                this.SET_FIELD_VALUE(x2, y, x1_val);
+            }
+    }
+
     REBUILD_FIELDS() {
+        // Empty cubes to TOP
         for (let x = 1; x <= this.xCount; x++ ) {
             for (let y = 2; y <= this.yCount; y++ ) {
                 if ( this.GET_FIELD_VALUE(x, y) == 0 && this.GET_FIELD_VALUE(x, y-1) !== 0 ) {
@@ -160,26 +195,38 @@ class jsCubes {
                 }
             }
         }
+
+        let empty_x = this.SEARCH_EMPTY_COL();
+        if (empty_x && empty_x > 1) {
+            console.log('empty_x: ' + empty_x);
+            // this.SWAP_COL(empty_x, empty_x - 1);
+        }
+
     }
 
 }
 
+const xWidth = 16;
+const yWidth = 8;
+const size = 40;
 
-const jsCubesFields = new jsCubes(10, 10);
-const jsCubesCanvas = new Canvas("jsCubes", "jsCubes-wrap", 400, 400, 40);
+const jsCubesFields = new jsCubes(xWidth, yWidth);
+const jsCubesCanvas = new Canvas("jsCubes", "jsCubes-wrap", xWidth*size, yWidth*size, size);
+
+const jsCubesFields_2 = new jsCubes(xWidth, 1);
+const jsCubesCanvas_2 = new Canvas("jsCubesLine", "jsCubesLine-wrap", xWidth*size, 1*size, size);
 
 jsCubesCanvas.REPAINT_FIELDS(jsCubesFields.fields);
+jsCubesCanvas_2.REPAINT_FIELDS(jsCubesFields_2.fields);
 
+
+// ONCLICK main field
 jsCubesCanvas.canvas.onclick = function(event){
     let pos = jsCubesCanvas.COORD_TO_POSITION(event.offsetX, event.offsetY);
-    // jsCubesFields.SET_FIELD_VALUE(pos.x, pos.y, 0);
-    
-    jsCubesFields.TRY_DELETE_FIELD(pos.x, pos.y).then(() => {
-        jsCubesCanvas.REPAINT_FIELDS(jsCubesFields.fields);
-    });
-
-    
-
+    if (jsCubesFields.GET_FIELD_VALUE(pos.x, pos.y)) {
+        jsCubesFields.TRY_DELETE_FIELD(pos.x, pos.y).then(() => {
+            jsCubesCanvas.REPAINT_FIELDS(jsCubesFields.fields);
+        });
+    }
+    document.getElementById("jsCubes-score").innerText = jsCubesFields.score;
 };
-
-//console.log(jsCubesFields.fields[0]);
