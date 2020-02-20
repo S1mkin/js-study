@@ -25,6 +25,10 @@ class Canvas {
 
         this.canvas.ctx.fillStyle = color;
         this.canvas.ctx.fillRect(start_x, start_y, this.step - 1, this.step - 1);
+
+        this.canvas.ctx.fillStyle = "#fff";
+        this.canvas.ctx.fillText(`${x}:${y}`, start_x + 10, start_y + 14);
+
     }
 
     REPAINT_FIELDS(fields) {
@@ -69,15 +73,38 @@ class jsCubes {
         return getRandomInt(1, 5);
     }
 
-    FIELD_VALUE(x, y, newValue) {
-        this.fields.forEach(el => {
-            if (el.x === x && el.y === y) {
-                el.value = newValue;
+    SET_FIELD_VALUE(x, y, newValue) {
+        for (let i = 0; i <= this.fields.length; i++ ) {
+            if (this.fields[i].x === x && this.fields[i].y === y) {
+                if (this.fields[i].value !== newValue) { 
+                    this.fields[i].value = newValue;
+                    this.REBUILD_FIELDS(); 
+                }
+                break;
             }
-        });
+        }
     }
 
+    GET_FIELD_VALUE(x, y) {
+        let value = null;
+        this.fields.forEach(el => {
+            if (el.x === x && el.y === y) {
+                value = el.value;
+            }
+        });
+        return value;
+    }
 
+    REBUILD_FIELDS() {
+        for (let x = 1; x <= this.xCount; x++ ) {
+            for (let y = 2; y <= this.yCount; y++ ) {
+                if ( this.GET_FIELD_VALUE(x, y) == 0 && this.GET_FIELD_VALUE(x, y-1) !== 0 ) {
+                    this.SET_FIELD_VALUE(x, y, this.GET_FIELD_VALUE(x, y-1));
+                    this.SET_FIELD_VALUE(x, y-1, 0);
+                }
+            }
+        }
+    }
 
 }
 
@@ -88,7 +115,9 @@ const jsCubesCanvas = new Canvas("jsCubes", "jsCubes-wrap", 400, 400, 40);
 jsCubesCanvas.REPAINT_FIELDS(jsCubesFields.fields);
 
 jsCubesCanvas.canvas.onclick = function(event){
-    let position = jsCubesCanvas.COORD_TO_POSITION(event.offsetX, event.offsetY);
-    jsCubesFields.FIELD_VALUE(position.x, position.y, 0);
+    let pos = jsCubesCanvas.COORD_TO_POSITION(event.offsetX, event.offsetY);
+    jsCubesFields.SET_FIELD_VALUE(pos.x, pos.y, 0);
     jsCubesCanvas.REPAINT_FIELDS(jsCubesFields.fields);
 };
+
+//console.log(jsCubesFields.fields[0]);
