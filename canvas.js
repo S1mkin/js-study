@@ -29,8 +29,8 @@ class Canvas {
         this.canvas.ctx.strokeStyle = (color == "#fff") ? "#fff": "#fff";
         this.canvas.ctx.strokeRect(start_x+4, start_y+4, this.step - 8, this.step - 8);
  
-        //this.canvas.ctx.fillStyle = "#fff";
-        //this.canvas.ctx.fillText(`${x}:${y}`, start_x + 10, start_y + 14);
+        this.canvas.ctx.fillStyle = "#fff";
+        this.canvas.ctx.fillText(`${x}:${y}`, start_x + 10, start_y + 14);
 
     }
 
@@ -82,8 +82,7 @@ class jsCubes {
         for (let i = 0; i <= this.fields.length; i++ ) {
             if (this.fields[i].x === x && this.fields[i].y === y) {
                 if (this.fields[i].value !== newValue) { 
-                    this.fields[i].value = newValue;
-                    this.REBUILD_FIELDS(); 
+                    this.fields[i].value = newValue; 
                 }
                 break;
             }
@@ -134,14 +133,11 @@ class jsCubes {
                 oneCubeDel(x, y+1, currentValue, newValue);
             }
 
-
         }
 
         this.SET_FIELD_VALUE(x, y, newValue);
 
         oneCubeDel(x, y, currentValue, newValue);
-
-        jsCubesCanvas.REPAINT_FIELDS(this.fields);
 
         this.score += (deleteCounter > 2) ? deleteCounter**2 : 0;
 
@@ -152,7 +148,6 @@ class jsCubes {
                         this.fields[i].value = (deleteCounter > 2) ? 0 : currentValue;
                     }
                 }
-                this.REBUILD_FIELDS();
                 resolve(true);
             }, 100);
         });   
@@ -177,12 +172,14 @@ class jsCubes {
     }
 
     SWAP_COL(x1, x2) {
-            for (let y = 1; y <= this.yCount; y++ ) {
-                let x1_val = this.GET_FIELD_VALUE(x1, y);
-                let x2_val = this.GET_FIELD_VALUE(x2, y);
-                this.SET_FIELD_VALUE(x1, y, x2_val);
-                this.SET_FIELD_VALUE(x2, y, x1_val);
-            }
+        for (let y = 1; y <= this.yCount; y++ ) {
+            let x1_val = this.GET_FIELD_VALUE(x1, y);
+            let x2_val = this.GET_FIELD_VALUE(x2, y);
+            console.log(x1_val + ':' +  x2_val);
+            this.SET_FIELD_VALUE(x1, y, x2_val);
+            this.SET_FIELD_VALUE(x2, y, x1_val);
+        }
+        return 'swap success';
     }
 
     REBUILD_FIELDS() {
@@ -195,12 +192,19 @@ class jsCubes {
                 }
             }
         }
-
+        
         let empty_x = this.SEARCH_EMPTY_COL();
-        if (empty_x && empty_x > 1) {
+        console.log('empty_x: ' + empty_x);
+
+        if (empty_x && empty_x < this.xCount) {
             console.log('empty_x: ' + empty_x);
-            // this.SWAP_COL(empty_x, empty_x - 1);
+            console.log(this.fields);
+            this.SWAP_COL(empty_x, empty_x + 1);
+            console.log(this.fields);
         }
+
+        jsCubesCanvas.REPAINT_FIELDS(this.fields);
+
 
     }
 
@@ -223,10 +227,16 @@ jsCubesCanvas_2.REPAINT_FIELDS(jsCubesFields_2.fields);
 // ONCLICK main field
 jsCubesCanvas.canvas.onclick = function(event){
     let pos = jsCubesCanvas.COORD_TO_POSITION(event.offsetX, event.offsetY);
+    //jsCubesFields.REBUILD_FIELDS();
     if (jsCubesFields.GET_FIELD_VALUE(pos.x, pos.y)) {
         jsCubesFields.TRY_DELETE_FIELD(pos.x, pos.y).then(() => {
-            jsCubesCanvas.REPAINT_FIELDS(jsCubesFields.fields);
+            //jsCubesFields.REBUILD_FIELDS();
+            // jsCubesCanvas.REPAINT_FIELDS(jsCubesFields.fields);
         });
     }
     document.getElementById("jsCubes-score").innerText = jsCubesFields.score;
 };
+
+setInterval(() => {
+    jsCubesFields.REBUILD_FIELDS();
+}, 50);
