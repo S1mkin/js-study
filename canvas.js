@@ -29,8 +29,8 @@ class Canvas {
         this.canvas.ctx.strokeStyle = (color == "#fff") ? "#fff": "#fff";
         this.canvas.ctx.strokeRect(start_x+4, start_y+4, this.step - 8, this.step - 8);
  
-        this.canvas.ctx.fillStyle = "#fff";
-        this.canvas.ctx.fillText(`${x}:${y}`, start_x + 10, start_y + 14);
+        //this.canvas.ctx.fillStyle = "#fff";
+        //this.canvas.ctx.fillText(`${x}:${y}`, start_x + 10, start_y + 14);
 
     }
 
@@ -141,16 +141,12 @@ class jsCubes {
 
         this.score += (deleteCounter > 2) ? deleteCounter**2 : 0;
 
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                for(let i = 0; i < this.fields.length; i++) {
-                    if ( this.fields[i].value == newValue ) {
-                        this.fields[i].value = (deleteCounter > 2) ? 0 : currentValue;
-                    }
-                }
-                resolve(true);
-            }, 100);
-        });   
+        for(let i = 0; i < this.fields.length; i++) {
+            if ( this.fields[i].value == newValue ) {
+                this.fields[i].value = (deleteCounter > 2) ? 0 : currentValue;
+            }
+        }
+
 
     } 
 
@@ -175,7 +171,6 @@ class jsCubes {
         for (let y = 1; y <= this.yCount; y++ ) {
             let x1_val = this.GET_FIELD_VALUE(x1, y);
             let x2_val = this.GET_FIELD_VALUE(x2, y);
-            console.log(x1_val + ':' +  x2_val);
             this.SET_FIELD_VALUE(x1, y, x2_val);
             this.SET_FIELD_VALUE(x2, y, x1_val);
         }
@@ -189,6 +184,7 @@ class jsCubes {
                 if ( this.GET_FIELD_VALUE(x, y) == 0 && this.GET_FIELD_VALUE(x, y-1) !== 0 ) {
                     this.SET_FIELD_VALUE(x, y, this.GET_FIELD_VALUE(x, y-1));
                     this.SET_FIELD_VALUE(x, y-1, 0);
+                    break;
                 }
             }
         }
@@ -197,21 +193,15 @@ class jsCubes {
         console.log('empty_x: ' + empty_x);
 
         if (empty_x && empty_x < this.xCount) {
-            console.log('empty_x: ' + empty_x);
-            console.log(this.fields);
             this.SWAP_COL(empty_x, empty_x + 1);
-            console.log(this.fields);
         }
-
-        jsCubesCanvas.REPAINT_FIELDS(this.fields);
-
 
     }
 
 }
 
 const xWidth = 16;
-const yWidth = 8;
+const yWidth = 12;
 const size = 40;
 
 const jsCubesFields = new jsCubes(xWidth, yWidth);
@@ -220,23 +210,30 @@ const jsCubesCanvas = new Canvas("jsCubes", "jsCubes-wrap", xWidth*size, yWidth*
 const jsCubesFields_2 = new jsCubes(xWidth, 1);
 const jsCubesCanvas_2 = new Canvas("jsCubesLine", "jsCubesLine-wrap", xWidth*size, 1*size, size);
 
-jsCubesCanvas.REPAINT_FIELDS(jsCubesFields.fields);
 jsCubesCanvas_2.REPAINT_FIELDS(jsCubesFields_2.fields);
-
 
 // ONCLICK main field
 jsCubesCanvas.canvas.onclick = function(event){
     let pos = jsCubesCanvas.COORD_TO_POSITION(event.offsetX, event.offsetY);
-    //jsCubesFields.REBUILD_FIELDS();
     if (jsCubesFields.GET_FIELD_VALUE(pos.x, pos.y)) {
-        jsCubesFields.TRY_DELETE_FIELD(pos.x, pos.y).then(() => {
-            //jsCubesFields.REBUILD_FIELDS();
-            // jsCubesCanvas.REPAINT_FIELDS(jsCubesFields.fields);
-        });
+        jsCubesFields.TRY_DELETE_FIELD(pos.x, pos.y);
     }
     document.getElementById("jsCubes-score").innerText = jsCubesFields.score;
 };
 
-setInterval(() => {
+
+/*
+
+let timer = setInterval(() => {
     jsCubesFields.REBUILD_FIELDS();
-}, 50);
+    jsCubesCanvas.REPAINT_FIELDS(jsCubesFields.fields);
+}, 40);
+*/
+
+
+let step = function step() {
+  requestAnimationFrame(step);
+    jsCubesFields.REBUILD_FIELDS();
+    jsCubesCanvas.REPAINT_FIELDS(jsCubesFields.fields);
+}
+step();
