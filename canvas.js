@@ -1,3 +1,6 @@
+/**
+* Class create new canvas element
+*/
 class Canvas {
 
     constructor(id, idParentElement, width, height, step) {
@@ -14,6 +17,7 @@ class Canvas {
     }
 
     CREATE_CANVAS() {
+        this.canvas.style.cursor = "pointer";
         this.canvas.ctx.fillStyle = "#FFF";
         this.canvas.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         document.getElementById(this.canvas.idParentElement).appendChild(this.canvas);
@@ -50,28 +54,96 @@ class Canvas {
 }
 
 
+
+/**
+* Class create new game field
+*/
 class jsCubes {
-    constructor(xCount, yCount) {
-        this.xCount = xCount;
-        this.yCount = yCount;
+
+    /**
+    * Constructor: create new object
+    */
+    constructor(level) {
         this.fields = [];
 
+        this.level = level;
         this.score = 0;
 
-        this.CREATE_FIELDS();
+        this.levelSettings = [
+            {id: 0, xWidth: 0, yWidth: 1, Ystart: 0, speed: 0, lines: 0},
+            {id: 1, xWidth: 10, yWidth: 10, Ystart: 7, speed: 500, lines: 10},
+            {id: 2, xWidth: 16, yWidth: 10, Ystart: 5, speed: 550, lines: 12},
+            {id: 3, xWidth: 11, yWidth: 10, Ystart: 6, speed: 500, lines: 14},
+            {id: 4, xWidth: 12, yWidth: 10, Ystart: 7, speed: 450, lines: 16},
+            {id: 5, xWidth: 13, yWidth: 11, Ystart: 8, speed: 400, lines: 18},
+            {id: 6, xWidth: 14, yWidth: 12, Ystart: 9, speed: 350, lines: 20},
+            {id: 7, xWidth: 15, yWidth: 13, Ystart: 10, speed: 300, lines: 22},
+        ]
+
+        this.START_LEVEL(1);
     }
 
-    CREATE_FIELDS() {
-        for (let x = 1; x <= this.xCount; x++) {
-            for (let y = 1; y <= this.yCount; y++) {
-                this.fields.push({
-                    x, y, value: this.RANDOM_VALUE()
-                });
+
+
+
+    /**
+    * Fill fields random cubes
+    */
+    START_LEVEL(level) {
+        this.level = level;
+        this.levelSettings[0].xWidth = this.levelSettings[this.level].xWidth; 
+
+        for (let x = 1; x <= this.levelSettings[this.level].xWidth; x++) {
+            for (let y = 1; y <= this.levelSettings[this.level].yWidth; y++) {
+                if (!level || y <= this.levelSettings[this.level].yWidth - this.levelSettings[this.level].Ystart) {
+                    this.fields.push({
+                        x, y, value: 0
+                    });
+                } else {
+                    this.fields.push({
+                        x, y, value: this.__RANDOM_VALUE()
+                    });
+                }
             }
         }
+
+        if (level == 0) {
+            this.__START_LINES();
+        }
+
     }
 
-    RANDOM_VALUE() {
+
+    /**
+    * METHODS FOR 1 LINES
+    */
+
+    async __START_LINES() {
+        let full_line = false;
+
+        let timer = await setInterval(()=>{
+            this.fields.forEach(el => {
+                if (el.value === 0) { 
+                    el.value = this.__RANDOM_VALUE();
+                    full_line = true;
+                }
+            });
+
+            if (full_line) {
+                full_line = false;
+                clearInterval(timer);
+                return this.fields;
+            }
+
+        }, levelSettings[this.level].speed );
+    }
+
+
+
+    /**
+    * Fill fields random cubes
+    */
+    __RANDOM_VALUE() {
         function getRandomInt(min, max) {
             return Math.floor(Math.random() * (max - min)) + min;
         }
@@ -107,37 +179,28 @@ class jsCubes {
         let newValue = 5;
         let deleteCounter = 1;
 
-        let oneCubeDel = (x, y, currentValue, newValue) => {
+        let __oneCubeDel = (x, y, currentValue, newValue) => {
 
-            if (x > 1 && this.GET_FIELD_VALUE(x-1, y) == currentValue ) {
-                deleteCounter++;
-                this.SET_FIELD_VALUE(x-1, y, newValue);
-                oneCubeDel(x-1, y, currentValue, newValue);
-            }
+            let params = [
+                { condition: !!(x > 1 && this.GET_FIELD_VALUE(x-1, y) == currentValue), next_x: x-1, next_y: y},
+                { condition: !!(x < this.levelSettings[this.level].xWidth && this.GET_FIELD_VALUE(x+1, y) == currentValue), next_x: x+1, next_y: y},
+                { condition: !!(y > 1 && this.GET_FIELD_VALUE(x, y-1) == currentValue ), next_x: x, next_y: y-1},
+                { condition: !!(y < this.levelSettings[this.level].yWidth && this.GET_FIELD_VALUE(x, y+1) == currentValue), next_x: x, next_y: y+1},
+            ]
 
-            if (x < this.xCount && this.GET_FIELD_VALUE(x+1, y) == currentValue ) {
-                deleteCounter++;
-                this.SET_FIELD_VALUE(x+1, y, newValue);
-                oneCubeDel(x+1, y, currentValue, newValue);
-            }
-
-            if (y > 1 && this.GET_FIELD_VALUE(x, y-1) == currentValue ) {
-                deleteCounter++;
-                this.SET_FIELD_VALUE(x, y-1, newValue);
-                oneCubeDel(x, y-1, currentValue, newValue);
-            }
-
-            if (y < this.yCount && this.GET_FIELD_VALUE(x, y+1) == currentValue ) {
-                deleteCounter++;
-                this.SET_FIELD_VALUE(x, y+1, newValue);
-                oneCubeDel(x, y+1, currentValue, newValue);
-            }
+            params.forEach(el => {
+                if ( el.condition ) {
+                    deleteCounter++;
+                    this.SET_FIELD_VALUE(el.next_x, el.next_y, newValue);
+                    __oneCubeDel(el.next_x, el.next_y, currentValue, newValue);
+                }          
+            });
 
         }
 
         this.SET_FIELD_VALUE(x, y, newValue);
 
-        oneCubeDel(x, y, currentValue, newValue);
+        __oneCubeDel(x, y, currentValue, newValue);
 
         this.score += (deleteCounter > 2) ? deleteCounter**2 : 0;
 
@@ -152,9 +215,9 @@ class jsCubes {
 
     SEARCH_EMPTY_COL(){
         let maybe_empty_col = 0; 
-        for (let x = 2; x <= this.xCount; x++ ) {
+        for (let x = 2; x <= this.levelSettings[this.level].xWidth; x++ ) {
             maybe_empty_col = x;
-            for (let y = 1; y <= this.yCount; y++ ) {
+            for (let y = 1; y <= this.levelSettings[this.level].yWidth; y++ ) {
                 if (this.GET_FIELD_VALUE(x, y) != 0) {
                     maybe_empty_col = 0;
                     break;
@@ -167,8 +230,8 @@ class jsCubes {
         return maybe_empty_col;     
     }
 
-    SWAP_COL(x1, x2) {
-        for (let y = 1; y <= this.yCount; y++ ) {
+    __SWAP_COL(x1, x2) {
+        for (let y = 1; y <= this.levelSettings[this.level].yWidth; y++ ) {
             let x1_val = this.GET_FIELD_VALUE(x1, y);
             let x2_val = this.GET_FIELD_VALUE(x2, y);
             this.SET_FIELD_VALUE(x1, y, x2_val);
@@ -179,8 +242,8 @@ class jsCubes {
 
     REBUILD_FIELDS() {
         // Empty cubes to TOP
-        for (let x = 1; x <= this.xCount; x++ ) {
-            for (let y = 2; y <= this.yCount; y++ ) {
+        for (let x = 1; x <= this.levelSettings[this.level].xWidth; x++ ) {
+            for (let y = 2; y <= this.levelSettings[this.level].yWidth; y++ ) {
                 if ( this.GET_FIELD_VALUE(x, y) == 0 && this.GET_FIELD_VALUE(x, y-1) !== 0 ) {
                     this.SET_FIELD_VALUE(x, y, this.GET_FIELD_VALUE(x, y-1));
                     this.SET_FIELD_VALUE(x, y-1, 0);
@@ -190,27 +253,27 @@ class jsCubes {
         }
         
         let empty_x = this.SEARCH_EMPTY_COL();
-        console.log('empty_x: ' + empty_x);
+        // console.log('empty_x: ' + empty_x);
 
-        if (empty_x && empty_x < this.xCount) {
-            this.SWAP_COL(empty_x, empty_x + 1);
+        if (empty_x && empty_x < this.levelSettings[this.level].xWidth) {
+            this.__SWAP_COL(empty_x, empty_x + 1);
         }
 
     }
 
 }
 
-const xWidth = 16;
-const yWidth = 12;
+
 const size = 40;
+var level = 1;
 
-const jsCubesFields = new jsCubes(xWidth, yWidth);
-const jsCubesCanvas = new Canvas("jsCubes", "jsCubes-wrap", xWidth*size, yWidth*size, size);
+const jsCubesFields = new jsCubes(level);
+const jsCubesCanvas = new Canvas("jsCubes", "jsCubes-wrap", jsCubesFields.levelSettings[level].xWidth*size, jsCubesFields.levelSettings[level].yWidth*size, size);
 
-const jsCubesFields_2 = new jsCubes(xWidth, 1);
-const jsCubesCanvas_2 = new Canvas("jsCubesLine", "jsCubesLine-wrap", xWidth*size, 1*size, size);
+const jsCubesFields_2 = new jsCubes(0);
+const jsCubesCanvas_2 = new Canvas("jsCubesLine", "jsCubesLine-wrap", jsCubesFields.levelSettings[level].xWidth*size, 1*size, size);
 
-jsCubesCanvas_2.REPAINT_FIELDS(jsCubesFields_2.fields);
+//jsCubesCanvas_2.REPAINT_FIELDS(jsCubesFields_2.fields);
 
 // ONCLICK main field
 jsCubesCanvas.canvas.onclick = function(event){
@@ -218,6 +281,7 @@ jsCubesCanvas.canvas.onclick = function(event){
     if (jsCubesFields.GET_FIELD_VALUE(pos.x, pos.y)) {
         jsCubesFields.TRY_DELETE_FIELD(pos.x, pos.y);
     }
+    // set new score
     document.getElementById("jsCubes-score").innerText = jsCubesFields.score;
 };
 
